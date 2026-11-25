@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expedição Terra Online – Geografia e Geologia</title>
+<style>
+
+:root{--bg:#f6f3ec;--fg:#1f2a2e;--card:#fff;--line:#d9d2c3;--geo:#2f9e6a;--geol:#b5651d;--bonus:#e0a800;--haz:#d64545;--acc:#2563eb;--mut:#5d6b6f;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14181a;--fg:#eef1f2;--card:#1e2427;--line:#33403f;--mut:#9fb0b3;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14181a;--fg:#eef1f2;--card:#1e2427;--line:#33403f;--mut:#9fb0b3;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.4}
+main{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2em 0}h2{font-size:1.1rem;margin:1em 0 .3em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0}
+ol,ul{padding-left:1.2em;margin:.4em 0}li{margin:.25em 0}
+button{font:inherit;cursor:pointer;border:0;border-radius:10px;padding:10px 14px;background:var(--acc);color:#fff;font-weight:600}
+button:disabled{opacity:.5;cursor:default}
+button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.pc{display:flex;gap:8px;flex-wrap:wrap}.pc button{background:var(--card);color:var(--fg);border:2px solid var(--line)}
+.pc button.on{border-color:var(--acc)}
+#board{display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);gap:3px;width:100%;aspect-ratio:1}
+.cell{position:relative;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:clamp(14px,4.6vw,22px);color:#fff}
+.cell.geo{background:var(--geo)}.cell.geol{background:var(--geol)}.cell.bonus{background:var(--bonus)}.cell.hazard{background:var(--haz)}.cell.start{background:var(--acc)}
+.tk{position:absolute;inset:auto 2px 2px 2px;display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
+.tk i{width:clamp(8px,2.6vw,13px);height:clamp(8px,2.6vw,13px);border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #0006}
+#center{grid-area:2/2/8/8;background:var(--card);border:1px solid var(--line);border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:6px}
+#who{font-weight:700;font-size:clamp(.85rem,3.6vw,1.05rem)}#die{font-size:clamp(34px,12vw,54px);line-height:1}
+#msg{font-size:clamp(.75rem,3.2vw,.9rem);color:var(--mut);min-height:2.6em}
+.leg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.85rem;color:var(--mut);margin:8px 0}
+.sc{padding:6px 10px;border-radius:8px;border:1px solid var(--line);margin:4px 0;background:var(--card)}.sc.on{border-color:var(--acc);font-weight:700}
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;padding:16px;z-index:5}
+.box{background:var(--card);border-radius:16px;padding:16px;max-width:460px;width:100%;max-height:92%;overflow:auto}
+.box h3{margin:0 0 6px}.q{font-size:1.05rem;font-weight:600}
+.opts{display:grid;gap:8px;margin:10px 0}
+.opts button{background:var(--bg);color:var(--fg);border:2px solid var(--line);text-align:left}
+.opts button.right{border-color:var(--geo);background:#2f9e6a33}.opts button.wrong{border-color:var(--haz);background:#d6454533}
+.fb{min-height:1.4em;font-size:.92rem}.row{display:flex;gap:8px;justify-content:flex-end}
+#names{display:grid;gap:6px;margin:10px 0}#names label{display:flex;align-items:center;gap:8px}#names input{flex:1;min-width:0;font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+[hidden]{display:none!important}
+
+.in{font:inherit;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg);min-width:0;width:100%}
+.row2{display:flex;gap:8px}.codebig{font-size:2.2rem;font-weight:800;letter-spacing:.3em;text-align:center;margin:6px 0}
+#err{border-color:var(--haz);color:var(--haz)}
+</style>
+</head>
+<body>
+<main>
+<div id="err" class="card" hidden></div>
+<section id="start">
+<h1>🌍 Expedição Terra · Online</h1>
+<p>Cada jogador usa o próprio celular. Uma pessoa cria a sala e as outras entram com o código.</p>
+<div class="card">
+<label>Seu nome<br><input class="in" id="myname" maxlength="16" placeholder="Seu nome"></label>
+<p><button id="create">Criar sala</button></p>
+<p>Ou entre com o código da sala:</p>
+<div class="row2"><input class="in" id="codein" maxlength="4" placeholder="CÓDIGO" style="text-transform:uppercase"><button id="join">Entrar</button></div>
+</div>
+<div class="card">
+<h2>Como jogar</h2>
+<ol>
+<li>Na sua vez, role o dado e avance as casas.</li>
+<li>🌍 Geografia e 🪨 Geologia: responda à pergunta. Acertou, ganha 1⭐; errou, volta 2 casas.</li>
+<li>⭐ Bônus: ganha 1 estrela. 🌋 Erupção: volta 2 casas.</li>
+<li>💡 Gaste 1⭐ para pedir uma dica (elimina 2 respostas erradas).</li>
+<li>Vence quem completar a volta primeiro (🏁). De 1 a 4 jogadores.</li>
+</ol>
+</div>
+</section>
+
+<section id="lobby" hidden>
+<h1>Sala de espera</h1>
+<p>Peça aos outros jogadores para abrirem o link do jogo e entrarem com este código:</p>
+<div class="codebig" id="lcode"></div>
+<div id="plist"></div>
+<p><button id="startbtn">Iniciar partida</button></p>
+<p id="wait" hidden>Aguardando o anfitrião iniciar a partida…</p>
+<p><button class="ghost" id="leave1">Sair</button></p>
+</section>
+
+<section id="game" hidden>
+<div id="board"></div>
+<div class="leg"><span>🌍 Geografia</span><span>🪨 Geologia</span><span>⭐ Bônus</span><span>🌋 Erupção</span><span>🏁 Início/Fim</span></div>
+<div id="scores"></div>
+<p><button class="ghost" id="leave2">Sair da partida</button></p>
+</section>
+</main>
+<div id="modal"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const GEO=[
+['Qual é o maior país da América do Sul em área?','Brasil','Argentina','Peru','Colômbia'],
+['Qual é o maior rio do mundo em volume de água?','Amazonas','Nilo','Mississippi','Yangtzé'],
+['Qual é a capital da Austrália?','Camberra','Sydney','Melbourne','Perth'],
+['Qual é o maior deserto quente do mundo?','Saara','Gobi','Atacama','Kalahari'],
+['Qual linha imaginária divide a Terra em hemisférios Norte e Sul?','Equador','Trópico de Câncer','Meridiano de Greenwich','Trópico de Capricórnio'],
+['Qual é o maior oceano do planeta?','Pacífico','Atlântico','Índico','Ártico'],
+['Em qual cordilheira fica o Monte Everest?','Himalaia','Andes','Alpes','Rochosas'],
+['Qual bioma predomina no interior do Nordeste brasileiro?','Caatinga','Pantanal','Pampa','Mata Atlântica'],
+['Qual país tem a maior população do mundo?','Índia','China','Estados Unidos','Indonésia'],
+['Qual continente tem mais países?','África','Ásia','Europa','América'],
+['Qual é o menor país do mundo em área?','Vaticano','Mônaco','San Marino','Malta'],
+['Qual é o ponto mais alto do Brasil?','Pico da Neblina','Pico da Bandeira','Monte Roraima','Pico Paraná'],
+['O meridiano de Greenwich passa por qual cidade?','Londres','Paris','Lisboa','Madri'],
+['Qual país tem formato parecido com uma bota?','Itália','Grécia','Portugal','Espanha']];
+const GEOL=[
+['Qual é a camada mais externa da Terra?','Crosta','Manto','Núcleo externo','Núcleo interno'],
+['Qual rocha se forma pelo resfriamento do magma?','Ígnea','Sedimentar','Metamórfica','Fóssil'],
+['Qual escala mede a dureza dos minerais?','Mohs','Richter','Beaufort','Celsius'],
+['Sobre qual camada as placas tectônicas se movimentam?','Manto superior','Crosta','Núcleo','Atmosfera'],
+['Qual instrumento registra os terremotos?','Sismógrafo','Barômetro','Anemômetro','Higrômetro'],
+['O mármore é um exemplo de rocha:','Metamórfica','Ígnea','Sedimentar','Vulcânica'],
+['O Círculo de Fogo do Pacífico concentra:','Vulcões e terremotos','Desertos','Geleiras','Recifes de coral'],
+['O arenito é uma rocha:','Sedimentar','Ígnea','Metamórfica','Magmática'],
+['Qual destes minerais é o mais duro?','Diamante','Quartzo','Ouro','Calcita'],
+['Os fósseis são mais comuns em rochas:','Sedimentares','Ígneas','Metamórficas','Vulcânicas'],
+['Como se chamava o supercontinente que existiu há cerca de 300 milhões de anos?','Pangeia','Laurásia','Rodínia','Atlântida'],
+['O magma que chega à superfície é chamado de:','Lava','Cinza','Tufo','Geodo'],
+['Como se chama o ponto dentro da Terra onde um terremoto começa?','Hipocentro','Epicentro','Falha','Dobra'],
+['Como se chama o desgaste das rochas pela ação do clima?','Intemperismo','Subducção','Erupção','Sedimentação']];
+
+const N=28,COL=['#e53935','#1e88e5','#43a047','#fdd835'],EMO=['🔴','🔵','🟢','🟡'],FACES=['⚀','⚁','⚂','⚃','⚄','⚅'];
+const ICON={geo:'🌍',geol:'🪨',bonus:'⭐',hazard:'🌋',start:'🏁'};
+const path=[];for(let c=0;c<8;c++)path.push([0,c]);for(let r=1;r<8;r++)path.push([r,7]);for(let c=6;c>=0;c--)path.push([7,c]);for(let r=6;r>=1;r--)path.push([r,0]);
+const type=i=>i==0?'start':i%7==0?'bonus':i%7==4?'hazard':(i%2?'geo':'geol');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+let db=null,uid=null,code='',S=null,PL=[],cells=[],unsubs=[],busy=false,tm=null,shown={},built=false;
+const raw=id=>(S&&S.names&&S.names[id])||'Jogador';
+const isMe=()=>!!(S&&S.order&&S.order[S.cur]===uid);
+const show=id=>['start','lobby','game'].forEach(x=>$('#'+x).hidden=x!==id);
+function err(m){const e=$('#err');e.textContent=m;e.hidden=!m}
+function myName(){const n=($('#myname').value||'').trim().slice(0,16)||'Jogador';try{localStorage.setItem('geo-nome',n)}catch(e){}return n}
+try{const n=localStorage.getItem('geo-nome');if(n)$('#myname').value=n}catch(e){}
+const h=location.hash.slice(1);if(h)$('#codein').value=h.toUpperCase().slice(0,4);
+
+(async()=>{
+ let canW=true;
+ try{const user=await claude.use('user');db=await claude.use('db');uid=user?await user.id():null;if(user){const w=await user.can('data.write');if(w===false)canW=false}}catch(e){}
+ if(!db||!uid){err('Para jogar online é preciso estar logado no Claude. Abra o link com a sua conta.');$('#create').disabled=true;$('#join').disabled=true;return}
+ if(!canW)err('Seu acesso é só de leitura. Peça a quem criou o jogo para compartilhar como Colaborador.');
+})();
+
+const genCode=()=>Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random()*24)]).join('');
+$('#create').onclick=async()=>{
+ if(!db)return;const name=myName();
+ try{code=genCode();await db.doc('rooms/'+code).set({host:uid,started:false,created:Date.now(),v:0});await db.doc('rooms/'+code+'/players/'+uid).set({name,at:Date.now()});enter()}
+ catch(e){err('Não foi possível criar a sala. Seu acesso precisa ser de Colaborador.')}
+};
+$('#join').onclick=async()=>{
+ if(!db)return;const name=myName(),c=$('#codein').value.trim().toUpperCase();
+ if(c.length<4){err('Digite o código de 4 letras.');return}
+ try{
+  const s=await db.doc('rooms/'+c).get();if(!s.exists){err('Sala não encontrada.');return}
+  const d=s.data();code=c;
+  if(d.started){if(!(d.order||[]).includes(uid)){err('Essa partida já começou.');return}}
+  else await db.doc('rooms/'+code+'/players/'+uid).set({name,at:Date.now()});
+  enter();
+ }catch(e){err('Não foi possível entrar. Seu acesso precisa ser de Colaborador.')}
+};
+function enter(){
+ err('');try{location.hash=code}catch(e){}
+ unsubs.push(db.doc('rooms/'+code).onSnapshot(s=>{
+  if(!s.exists)return;const d=s.data();
+  if(S&&(d.v||0)<(S.v||0))return;
+  S=d;route();
+ },()=>err('Conexão perdida. Recarregue a página.')));
+ unsubs.push(db.collection('rooms/'+code+'/players').onSnapshot(q=>{
+  PL=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.at-b.at)||(a.id<b.id?-1:1));
+  if(S&&!S.started)renderLobby();
+ }));
+ show('lobby');$('#lcode').textContent=code;
+}
+function leave(){unsubs.forEach(f=>f());unsubs=[];S=null;PL=[];built=false;shown={};busy=false;$('#modal').style.display='none';show('start');err('')}
+$('#leave1').onclick=leave;$('#leave2').onclick=leave;
+
+function route(){
+ if(!S.started){show('lobby');renderLobby();return}
+ if(!built){buildBoard();built=true}
+ show('game');renderGame();
+}
+function renderLobby(){
+ $('#lcode').textContent=code;
+ const l=$('#plist');l.innerHTML='';
+ PL.forEach((p,i)=>{const d=document.createElement('div');d.className='sc';d.textContent=EMO[i%4]+' '+(p.name||'Jogador')+(p.id===uid?' (você)':'')+(p.id===S.host?' · anfitrião':'');l.appendChild(d)});
+ const host=S.host===uid;$('#startbtn').hidden=!host;$('#wait').hidden=host;
+}
+$('#startbtn').onclick=async()=>{
+ const ps=PL.slice(0,4),names={},pos={},stars={};
+ ps.forEach(p=>{names[p.id]=p.name||'Jogador';pos[p.id]=0;stars[p.id]=0});
+ S={host:S.host,created:S.created,started:true,order:ps.map(p=>p.id),names,pos,stars,cur:0,phase:'roll',die:0,msg:'Boa expedição!',winner:'',q:null,removed:[],pick:'',used:[],v:(S.v||0)+1};
+ try{await db.doc('rooms/'+code).set(S)}catch(e){err('Não foi possível iniciar a partida.')}
+};
+
+async function put(p){
+ S={...S,...p,v:(S.v||0)+1};
+ try{await db.doc('rooms/'+code).set(S)}catch(e){err('Falha ao salvar a jogada. Verifique a conexão.')}
+}
+function free(){busy=false;if(S&&S.started)renderGame()}
+
+function buildBoard(){
+ const b=$('#board');b.innerHTML='';cells=[];
+ path.forEach(([r,c],i)=>{const d=document.createElement('div');const t=type(i);d.className='cell '+t;d.style.gridRow=r+1;d.style.gridColumn=c+1;d.innerHTML='<span>'+ICON[t]+'</span><div class="tk"></div>';b.appendChild(d);cells.push(d)});
+ const ce=document.createElement('div');ce.id='center';ce.innerHTML='<div id="who"></div><div id="die">🎲</div><button id="roll">Rolar dado</button><div id="msg"></div>';b.appendChild(ce);
+ $('#roll').onclick=roll;
+}
+function drawTokens(){
+ cells.forEach(c=>c.querySelector('.tk').innerHTML='');
+ S.order.forEach((id,i)=>{const d=document.createElement('i');d.style.background=COL[i];cells[(shown[id]||0)%N].querySelector('.tk').appendChild(d)});
+}
+function sync(){
+ let moving=false;
+ S.order.forEach(id=>{const t=S.pos[id];if(shown[id]==null)shown[id]=t;if(shown[id]>t)shown[id]=t;else if(shown[id]<t){shown[id]++;moving=true}});
+ drawTokens();clearTimeout(tm);if(moving)tm=setTimeout(sync,200);
+}
+function renderGame(){
+ const cp=S.order[S.cur],me=isMe(),end=S.phase==='end';
+ $('#who').textContent=end?'Fim de jogo':(EMO[S.cur]+(me?' Sua vez!':' Vez de '+raw(cp)));
+ if(!busy)$('#die').textContent=S.die?FACES[S.die-1]:'🎲';
+ const rb=$('#roll');rb.disabled=!(me&&S.phase==='roll'&&!busy);rb.textContent=me?'Rolar dado':'Aguarde…';
+ $('#msg').textContent=S.msg||'';
+ const sc=$('#scores');sc.innerHTML='';
+ S.order.forEach((id,i)=>{const d=document.createElement('div');d.className='sc'+(i===S.cur&&!end?' on':'');d.textContent=EMO[i]+' '+raw(id)+(id===uid?' (você)':'')+' · '+S.stars[id]+'⭐ · casa '+S.pos[id]+'/'+N;sc.appendChild(d)});
+ sync();renderModal();
+}
+
+async function roll(){
+ if(busy||!isMe()||S.phase!=='roll')return;
+ busy=true;$('#roll').disabled=true;let t=0;
+ const iv=setInterval(()=>{
+  $('#die').textContent=FACES[Math.floor(Math.random()*6)];
+  if(++t>8){clearInterval(iv);(async()=>{
+   const d=1+Math.floor(Math.random()*6),pos={...S.pos};pos[uid]=Math.min(N,pos[uid]+d);
+   await put({die:d,pos,phase:'moving',msg:raw(uid)+' tirou '+d+'!'});
+   setTimeout(land,d*200+500);
+  })()}
+ },70);
+}
+async function land(){
+ const p=S.pos[uid],n=S.order.length,nx=(S.cur+1)%n;
+ if(p>=N){await put({phase:'end',winner:uid,msg:'🏆 '+raw(uid)+' venceu!'});free();return}
+ const t=type(p);
+ if(t==='bonus'){const stars={...S.stars};stars[uid]++;await put({stars,cur:nx,phase:'roll',msg:raw(uid)+': Bônus! +1⭐'})}
+ else if(t==='hazard'){const pos={...S.pos};pos[uid]=Math.max(1,p-2);await put({pos,cur:nx,phase:'roll',msg:raw(uid)+': Erupção! Volta 2 casas.'})}
+ else{
+  const bank=t==='geo'?GEO:GEOL;let used=S.used.slice();
+  let fr=bank.map((_,i)=>i).filter(i=>!used.includes(t+':'+i));
+  if(!fr.length){used=used.filter(u=>!u.startsWith(t+':'));fr=bank.map((_,i)=>i)}
+  const i=fr[Math.floor(Math.random()*fr.length)];used.push(t+':'+i);const q=bank[i];
+  await put({phase:'ask',used,q:{t,text:q[0],ok:q[1],opts:shuffle(q.slice(1))},removed:[],pick:'',msg:raw(uid)+' está respondendo…'});
+ }
+ free();
+}
+async function pick(o){if(busy)return;busy=true;await put({phase:'result',pick:o});free()}
+async function cont(){
+ if(busy)return;busy=true;
+ const right=S.pick===S.q.ok,stars={...S.stars},pos={...S.pos};
+ if(right)stars[uid]++;else pos[uid]=Math.max(1,pos[uid]-2);
+ await put({stars,pos,q:null,pick:'',removed:[],cur:(S.cur+1)%S.order.length,phase:'roll',msg:raw(uid)+(right?' acertou! +1⭐':' errou! Volta 2 casas.')});
+ free();
+}
+async function hint(){
+ if(busy||S.stars[uid]<1||S.removed.length)return;busy=true;
+ const stars={...S.stars};stars[uid]--;
+ await put({stars,removed:shuffle(S.q.opts.filter(x=>x!==S.q.ok)).slice(0,2)});free();
+}
+async function again(){
+ const pos={},stars={};S.order.forEach(id=>{pos[id]=0;stars[id]=0});
+ await put({pos,stars,cur:0,phase:'roll',die:0,msg:'Nova partida!',winner:'',q:null,removed:[],pick:'',used:[]});
+}
+function renderModal(){
+ const m=$('#modal');
+ if(S.phase==='end'){
+  m.innerHTML='<div class="box"><h3></h3><div class="sl"></div><div class="row" style="margin-top:12px"></div></div>';
+  m.querySelector('h3').textContent='🏆 '+raw(S.winner)+' venceu!';
+  S.order.forEach((id,i)=>{const d=document.createElement('div');d.className='sc';d.textContent=EMO[i]+' '+raw(id)+': '+S.stars[id]+'⭐';m.querySelector('.sl').appendChild(d)});
+  const row=m.querySelector('.row');
+  if(S.host===uid){const b=document.createElement('button');b.textContent='Nova partida';b.onclick=again;row.appendChild(b)}
+  const l=document.createElement('button');l.className='ghost';l.textContent='Sair';l.onclick=leave;row.appendChild(l);
+  m.style.display='flex';return;
+ }
+ if(S.phase!=='ask'&&S.phase!=='result'){m.style.display='none';return}
+ const q=S.q,me=isMe(),res=S.phase==='result',cp=S.order[S.cur];
+ m.innerHTML='<div class="box"><h3></h3><p class="q"></p><div class="opts"></div><div class="fb"></div><div class="row"></div></div>';
+ m.querySelector('h3').textContent=(q.t==='geo'?'🌍 Geografia':'🪨 Geologia')+' · '+EMO[S.cur]+' '+raw(cp);
+ m.querySelector('.q').textContent=q.text;
+ const box=m.querySelector('.opts'),fb=m.querySelector('.fb'),row=m.querySelector('.row');
+ q.opts.filter(o=>!S.removed.includes(o)).forEach(o=>{
+  const b=document.createElement('button');b.textContent=o;b.disabled=!me||res;
+  if(res&&o===q.ok)b.classList.add('right');
+  if(res&&o===S.pick&&o!==q.ok)b.classList.add('wrong');
+  b.onclick=()=>pick(o);box.appendChild(b);
+ });
+ if(res){
+  fb.textContent=S.pick===q.ok?'✅ Correto! +1⭐':'❌ Era: '+q.ok+'. Volta 2 casas.';
+  if(me){const c=document.createElement('button');c.textContent='Continuar';c.onclick=cont;row.appendChild(c)}
+ }else if(me){
+  const hb=document.createElement('button');hb.className='ghost';hb.textContent='💡 Dica (−1⭐)';hb.disabled=S.stars[uid]<1||S.removed.length>0;hb.onclick=hint;row.appendChild(hb);
+ }else fb.textContent=raw(cp)+' está respondendo…';
+ m.style.display='flex';
+}
+</script>
+</body>
+</html>
